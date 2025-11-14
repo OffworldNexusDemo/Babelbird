@@ -1,0 +1,19 @@
+{
+  "name": "@babelbird/chrome-ai",
+  "version": "1.0.0",
+  "description": "TypeScript type definitions for Chrome's on-device Translation and Language Detection APIs",
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "keywords": [
+    "chrome",
+    "chromium",
+    "translation",
+    "language-detection",
+    "ai",
+    "typescript",
+    "types"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "Babelbird",
+    "version": "0.0.1",
+    "description": "A Chrome extension that displays a popup when pressing Alt+X",
+    "permissions": [],
+    "icons": {
+        "16": "vite.svg",
+        "48": "vite.svg",
+        "128": "vite.svg"
+    },
+    "background": {
+        "service_worker": "babelbird-bg.js"
+    },
+    "commands": {
+        "translate-input": {
+            "suggested_key": {
+                "default": "Alt+X"
+            },
+            "description": "Translate current input"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["babelbird.js"],
+            "run_at": "document_end"
+        }
+    ]
+}

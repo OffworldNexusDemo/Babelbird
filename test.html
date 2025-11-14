@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Test Babelbird</title>
+
+        <style>
+            blockquote {
+                background: #eeeeee;
+                border-radius: 5px;
+                margin: 16px 0;
+            }
+
+            blockquote p {
+                padding: 15px;
+            }
+
+            cite {
+                margin: 16px 32px;
+                font-weight: bold;
+            }
+
+            blockquote p::before {
+                content: "\201C";
+            }
+
+            blockquote p::after {
+                content: "\201D";
+            }
+
+            [contenteditable="true"] {
+                caret-color: red;
+            }
+        </style>
+    </head>
+
+    <body>
+        <blockquote contenteditable="true">
+            <p>Edit this content to <b>add</b> your own quote</p>
+        </blockquote>
+
+        <cite contenteditable="true">-- Write your own name here</cite>
+
+        <div>
+            <input type="text" />
+        </div>
+
+        <textarea name="yolo" id="" cols="30" rows="10"></textarea>
+    </body>
+</html>
