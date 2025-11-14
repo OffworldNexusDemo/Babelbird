@@ -123,6 +123,13 @@
         TranslatorInstance,
     } from "../chrome-ai";
     import LoadingIndicator from "./components/LoadingIndicator.svelte";
+    import { makeChromeStorage } from "./storage.svelte";
+
+    const {
+        targetLanguage,
+    }: {
+        targetLanguage: Awaited<ReturnType<typeof makeChromeStorage<string>>>;
+    } = $props();
 
     /**
      * Either null when not loading or a number from 0 to 1 if loading has been
@@ -132,45 +139,57 @@
     let languageDetector = $state<LanguageDetectorInstance | null>(null);
 
     async function getLanguageDetector() {
-        if (!languageDetector) {
-            languageDetector = await LanguageDetector.create({
-                monitor(m) {
-                    m.addEventListener("downloadprogress", (e) => {
-                        languageDetectorLoad = e.loaded;
-                    });
-                },
-            });
-        }
+        try {
+            if (!languageDetector) {
+                languageDetectorLoad = 0;
 
-        return languageDetector;
+                languageDetector = await LanguageDetector.create({
+                    monitor(m) {
+                        m.addEventListener("downloadprogress", (e) => {
+                            languageDetectorLoad = e.loaded;
+                        });
+                    },
+                });
+            }
+
+            return languageDetector;
+        } finally {
+            languageDetectorLoad = 1;
+        }
     }
 
     let translatorLoad = $state<null | number>(null);
     let translator = $state<TranslatorInstance | null>(null);
     let translatorLangPair = $state<string>("");
+    let translatorFirstByte = $state<number>(0);
 
     async function getTranslator(source: string, target: string) {
-        const pair = `${source}:${target}`;
+        try {
+            const pair = `${source}:${target}`;
 
-        if (pair !== translatorLangPair) {
-            if (translator) {
-                translator.destroy();
-                translator = null;
+            if (pair !== translatorLangPair) {
+                if (translator) {
+                    translator.destroy();
+                    translator = null;
+                    translatorFirstByte = 0;
+                }
+
+                translator = await Translator.create({
+                    sourceLanguage: source,
+                    targetLanguage: target,
+                    monitor(m) {
+                        m.addEventListener("downloadprogress", (e) => {
+                            translatorLoad = e.loaded;
+                        });
+                    },
+                });
+                translatorLangPair = pair;
             }
 
-            translator = await Translator.create({
-                sourceLanguage: source,
-                targetLanguage: target,
-                monitor(m) {
-                    m.addEventListener("downloadprogress", (e) => {
-                        translatorLoad = e.loaded;
-                    });
-                },
-            });
-            translatorLangPair = pair;
+            return translator!;
+        } finally {
+            translatorLoad = 1;
         }
-
-        return translator!;
     }
 
     /**
@@ -178,44 +197,62 @@
      * translation procedure.
      */
     export async function doTranslation() {
-        const ttt = getTextToTranslate();
+        try {
+            const ttt = getTextToTranslate();
 
-        if (!ttt?.text) {
-            return;
-        }
-
-        if (import.meta.env.MODE === "development") {
-            console.log(`[babelbird] Going to translate: `, ttt);
-        }
-
-        if (!ttt.isSelected) {
-            document.execCommand("selectAll", false, "");
-        }
-
-        const ld = await getLanguageDetector();
-        const source = (await ld.detect(ttt.text))[0].detectedLanguage;
-        const t = await getTranslator(source, "fr");
-
-        const stream = t.translateStreaming(ttt.text);
-        const reader = stream.getReader();
-
-        while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-                break;
+            if (!ttt?.text) {
+                return;
             }
 
-            document.execCommand("insertText", false, value);
+            if (import.meta.env.MODE === "development") {
+                console.log(`[babelbird] Going to translate: `, ttt);
+            }
+
+            targetLanguage.current =
+                prompt(
+                    "What is the target language?",
+                    targetLanguage.current,
+                ) ?? "en";
+
+            if (!ttt.isSelected) {
+                document.execCommand("selectAll", false, "");
+            }
+
+            translatorFirstByte = 0;
+
+            const ld = await getLanguageDetector();
+            const source = (await ld.detect(ttt.text))[0].detectedLanguage;
+            const t = await getTranslator(source, targetLanguage.current);
+
+            const stream = t.translateStreaming(ttt.text);
+            const reader = stream.getReader();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                translatorFirstByte = 1;
+
+                if (done) {
+                    break;
+                }
+
+                document.execCommand("insertText", false, value);
+            }
+        } finally {
+            translatorFirstByte = 1;
         }
     }
 
     let loadProgress = $derived.by(() => {
-        if (languageDetectorLoad === null || translatorLoad === null) {
+        if (languageDetectorLoad === null && translatorLoad === null) {
             return null;
         }
 
-        return (languageDetectorLoad + translatorLoad) / 2;
+        return (
+            ((languageDetectorLoad ?? 0) +
+                (translatorLoad ?? 0) +
+                translatorFirstByte) /
+            3
+        );
     });
 
     if (import.meta.env.MODE === "development") {
@@ -224,6 +261,7 @@
                 loadProgress,
                 languageDetectorLoad,
                 translatorLoad,
+                translatorFirstByte,
             });
         });
     }

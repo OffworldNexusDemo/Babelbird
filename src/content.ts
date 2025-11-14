@@ -1,5 +1,6 @@
 import { mount } from "svelte";
 import Babelbird from "./Babelbird.svelte";
+import { makeChromeStorage } from "./storage.svelte";
 
 let app: ReturnType<typeof Babelbird> | undefined;
 
@@ -9,7 +10,7 @@ let app: ReturnType<typeof Babelbird> | undefined;
  * the first action that we receive we'll load the required component into the
  * DOM, but not before.
  */
-function loadTranslator() {
+async function loadTranslator() {
     if (app) {
         return;
     }
@@ -24,6 +25,11 @@ function loadTranslator() {
         return;
     }
 
+    const targetLanguage = await makeChromeStorage<string>(
+        "babelbird_target_lang",
+        "en",
+    );
+
     const container = document.createElement("div");
     container.id = "_babelbird";
     document.body.appendChild(container);
@@ -34,19 +40,22 @@ function loadTranslator() {
 
     app = mount(Babelbird, {
         target: target,
+        props: {
+            targetLanguage,
+        },
     });
 }
 
 /**
  * We're listening to the actions from the browser
  */
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (import.meta.env.MODE === "development") {
         console.log(`[babelbird] Received action: ${message.action}`);
     }
 
     if (message.action === "translate-input") {
-        loadTranslator();
+        await loadTranslator();
         app!.doTranslation();
     }
 });

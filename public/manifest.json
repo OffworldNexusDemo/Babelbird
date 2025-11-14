@@ -3,7 +3,7 @@
     "name": "Babelbird",
     "version": "0.0.1",
     "description": "A Chrome extension that displays a popup when pressing Alt+X",
-    "permissions": [],
+    "permissions": ["storage"],
     "icons": {
         "16": "vite.svg",
         "48": "vite.svg",
