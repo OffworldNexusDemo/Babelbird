@@ -122,6 +122,7 @@
         LanguageDetectorInstance,
         TranslatorInstance,
     } from "../chrome-ai";
+    import LoadingIndicator from "./components/LoadingIndicator.svelte";
 
     /**
      * Either null when not loading or a number from 0 to 1 if loading has been
@@ -153,7 +154,7 @@
 
         if (pair !== translatorLangPair) {
             if (translator) {
-                await translator.destroy();
+                translator.destroy();
                 translator = null;
             }
 
@@ -179,7 +180,7 @@
     export async function doTranslation() {
         const ttt = getTextToTranslate();
 
-        if (!ttt) {
+        if (!ttt?.text) {
             return;
         }
 
@@ -209,7 +210,13 @@
         }
     }
 
-    let loadProgress = $derived((languageDetectorLoad + translatorLoad) / 2);
+    let loadProgress = $derived.by(() => {
+        if (languageDetectorLoad === null || translatorLoad === null) {
+            return null;
+        }
+
+        return (languageDetectorLoad + translatorLoad) / 2;
+    });
 
     if (import.meta.env.MODE === "development") {
         $effect(() => {
@@ -221,3 +228,55 @@
         });
     }
 </script>
+
+<LoadingIndicator progress={loadProgress} />
+
+<style lang="scss">
+    :global {
+        :host {
+            /* Colors */
+            --color-bg-overlay: rgba(255, 255, 255, 0.95);
+            --color-border: rgba(0, 0, 0, 0.1);
+            --color-text-primary: #333;
+            --color-text-secondary: #666;
+            --color-surface-muted: rgba(0, 0, 0, 0.08);
+            --color-accent-from: #4f46e5;
+            --color-accent-to: #6366f1;
+
+            /* Spacing scale */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 12px;
+            --space-lg: 16px;
+            --space-xl: 20px;
+
+            /* Radius scale */
+            --radius-sm: 2px;
+            --radius-md: 8px;
+
+            /* Typography */
+            --font-sans:
+                -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                sans-serif;
+            --font-mono:
+                ui-monospace, "SF Mono", Monaco, "Cascadia Code", monospace;
+            --text-sm: 13px;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+
+            /* Effects */
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --backdrop-blur: blur(10px);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :host {
+                --color-bg-overlay: rgba(30, 30, 30, 0.95);
+                --color-border: rgba(255, 255, 255, 0.1);
+                --color-text-primary: #e5e5e5;
+                --color-text-secondary: #a3a3a3;
+                --color-surface-muted: rgba(255, 255, 255, 0.1);
+            }
+        }
+    }
+</style>
