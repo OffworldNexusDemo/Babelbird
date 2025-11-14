@@ -17,6 +17,11 @@
          * The element on which we should send the keyboard events
          */
         element: Element;
+
+        /**
+         * The range to select when applying the selection
+         */
+        rangeToSelect?: Range;
     }
 
     /**
@@ -34,23 +39,49 @@
             return {
                 isSelected: false,
                 text: (active as HTMLInputElement | HTMLTextAreaElement).value,
-                element: active,
+                element: active!,
             };
         } else if (contentEditable) {
             const selectionIsRange = selection?.type === "Range";
 
             if (!selectionIsRange) {
                 const range = selectTextToTranslate(selection, active!);
-                selection?.removeAllRanges();
-                selection?.addRange(range);
+
+                return {
+                    isSelected: true,
+                    text: range.toString() ?? "",
+                    element: active!,
+                    rangeToSelect: range,
+                };
             }
 
             return {
                 isSelected: true,
                 text: selection?.toString() ?? "",
-                element: active,
+                element: active!,
             };
         }
+    }
+
+    /**
+     * Applies the selection to the element based on the TextToTranslate info
+     */
+    function applySelection(ttt: TextToTranslate) {
+        // Focus the element
+        if (ttt.element instanceof HTMLElement) {
+            ttt.element.focus();
+        }
+
+        if (!ttt.isSelected) {
+            // For input/textarea, select all
+            document.execCommand("selectAll", false, "");
+        } else if (ttt.rangeToSelect) {
+            // For contentEditable with a computed range
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(ttt.rangeToSelect);
+        }
+        // If isSelected is true but no rangeToSelect, the selection was already there
     }
 
     /**
@@ -124,12 +155,15 @@
     } from "../chrome-ai";
     import LoadingIndicator from "./components/LoadingIndicator.svelte";
     import { makeChromeStorage } from "./storage.svelte";
+    import LanguageDialog from "./LanguageDialog.svelte";
 
     const {
         targetLanguage,
     }: {
         targetLanguage: Awaited<ReturnType<typeof makeChromeStorage<string>>>;
     } = $props();
+
+    let languageDialog = $state<null | ReturnType<typeof LanguageDialog>>();
 
     /**
      * Either null when not loading or a number from 0 to 1 if loading has been
@@ -208,14 +242,14 @@
                 console.log(`[babelbird] Going to translate: `, ttt);
             }
 
-            targetLanguage.current =
-                prompt(
-                    "What is the target language?",
-                    targetLanguage.current,
-                ) ?? "en";
+            targetLanguage.current = await languageDialog!.askForLanguage(
+                targetLanguage.current,
+            );
 
-            if (!ttt.isSelected) {
-                document.execCommand("selectAll", false, "");
+            if (import.meta.env.MODE === "development") {
+                console.log(
+                    `[babelbird] Translating to ${targetLanguage.current}`,
+                );
             }
 
             translatorFirstByte = 0;
@@ -229,7 +263,16 @@
 
             while (true) {
                 const { done, value } = await reader.read();
-                translatorFirstByte = 1;
+
+                // The issue with the current API is that it has a stupid
+                // artificial random delay of 2~3s in order to prevent from
+                // fingerprinting the model but as a result there is no
+                // official way to know when the model is _actually_ loaded, so
+                // instead we wait for the first byte to pop up.
+                if (!translatorFirstByte) {
+                    translatorFirstByte = 1;
+                    applySelection(ttt);
+                }
 
                 if (done) {
                     break;
@@ -269,7 +312,12 @@
 
 <LoadingIndicator progress={loadProgress} />
 
+<LanguageDialog bind:this={languageDialog} />
+
 <style lang="scss">
+    @forward "./styles/ark/dialog.scss";
+    @forward "./styles/ark/select.scss";
+
     :global {
         :host {
             /* Colors */
