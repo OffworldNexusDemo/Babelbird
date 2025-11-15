@@ -31,7 +31,7 @@
 
     function attemptReject(reason: string) {
         if (reject) {
-            reject(reason);
+            reject(new Error(reason));
         }
     }
 
@@ -77,7 +77,7 @@
                     translate the selected text</Dialog.Description
                 >
 
-                <form action="" onsubmit={nextStep}>
+                <form action="" onsubmit={nextStep} class="language-form">
                     <Select.Root {collection} bind:value>
                         <Select.Label>Language</Select.Label>
                         <Select.Control>
@@ -114,9 +114,9 @@
                         <Select.HiddenSelect />
                     </Select.Root>
 
-                    <div>
-                        <button type="submit">Translate</button>
-                    </div>
+                    <button type="submit" class="submit-button"
+                        >Translate</button
+                    >
                 </form>
 
                 <Dialog.CloseTrigger>
@@ -126,3 +126,47 @@
         </Dialog.Positioner>
     </Portal>
 </Dialog.Root>
+<style>
+    .language-form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xl);
+    }
+
+    .language-form :global([data-scope="select"][data-part="label"]) {
+        margin-bottom: var(--space-md);
+    }
+
+    .submit-button {
+        padding: var(--space-sm) var(--space-lg);
+        background: linear-gradient(
+            90deg,
+            var(--color-accent-from),
+            var(--color-accent-to)
+        );
+        color: white;
+        border: none;
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .submit-button:hover {
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .submit-button:active {
+        transform: translateY(0);
+    }
+
+    .submit-button:focus {
+        outline: 2px solid var(--color-accent-from);
+        outline-offset: 2px;
+    }
+</style>
+

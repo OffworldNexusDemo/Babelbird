@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Babelbird",
-    "version": "0.0.1",
-    "description": "A Chrome extension that displays a popup when pressing Alt+X",
+    "version": "0.1.0",
+    "description": "Translate your current input by pressing Alt+T",
     "permissions": ["storage"],
     "icons": {
         "16": "vite.svg",
@@ -15,7 +15,7 @@
     "commands": {
         "translate-input": {
             "suggested_key": {
-                "default": "Alt+X"
+                "default": "Alt+T"
             },
             "description": "Translate current input"
         }

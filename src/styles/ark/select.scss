@@ -1,51 +1,120 @@
 :global {
     [data-scope="select"][data-part="content"][data-state="open"] {
-        animation: fadeIn 0.25s ease-out;
+        animation: selectIn 0.2s ease-out;
     }
 
     [data-scope="select"][data-part="content"][data-state="closed"] {
-        animation: fadeOut 0.2s ease-in;
+        animation: selectOut 0.15s ease-in;
     }
 
     [data-scope="select"][data-part="content"] {
-        border: 1px solid gainsboro;
-        background: white;
-        z-index: 1;
-        padding: 12px;
+        background: var(--color-bg-overlay);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        backdrop-filter: var(--backdrop-blur);
+        padding: var(--space-xs);
+        font-family: var(--font-sans);
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    [data-scope="select"][data-part="label"] {
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+        margin-bottom: var(--space-xs);
+        display: block;
     }
 
     [data-scope="select"][data-part="item-group-label"] {
-        font-weight: bold;
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-secondary);
+        padding: var(--space-sm) var(--space-md);
+        padding-bottom: var(--space-xs);
     }
 
     [data-scope="select"][data-part="item"] {
         display: flex;
         justify-content: space-between;
+        align-items: center;
+        padding: var(--space-sm) var(--space-md);
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        margin: var(--space-xs) 0;
+        font-size: var(--text-sm);
+        color: var(--color-text-primary);
+        transition: background 0.1s ease;
     }
 
     [data-scope="select"][data-part="item"][data-highlighted] {
-        background: #0000ff;
+        background: linear-gradient(
+            90deg,
+            var(--color-accent-from),
+            var(--color-accent-to)
+        );
         color: white;
     }
 
     [data-scope="select"][data-part="item"][data-disabled] {
-        color: silver;
+        color: var(--color-text-secondary);
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    [data-scope="select"][data-part="item-indicator"] {
+        margin-left: var(--space-sm);
     }
 
     [data-scope="select"][data-part="trigger"] {
         display: inline-flex;
-        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-sm);
+        padding: var(--space-sm) var(--space-md);
+        background: var(--color-bg-overlay);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        color: var(--color-text-primary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        width: 100%;
+
+        &:hover {
+            border-color: var(--color-accent-from);
+        }
+
+        &:focus {
+            outline: 2px solid var(--color-accent-from);
+            outline-offset: 2px;
+            border-color: var(--color-accent-from);
+        }
     }
 
     [data-scope="select"][data-part="trigger"] svg {
-        width: 1em;
-        height: 1em;
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-secondary);
+        transition: transform 0.2s ease;
     }
 
-    @keyframes fadeIn {
+    [data-scope="select"][data-part="trigger"][data-state="open"] svg {
+        transform: rotate(180deg);
+    }
+
+    [data-scope="select"][data-part="control"] {
+        width: 100%;
+    }
+
+    @keyframes selectIn {
         from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-8px);
         }
         to {
             opacity: 1;
@@ -53,14 +122,14 @@
         }
     }
 
-    @keyframes fadeOut {
+    @keyframes selectOut {
         from {
             opacity: 1;
             transform: translateY(0);
         }
         to {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-8px);
         }
     }
 }
