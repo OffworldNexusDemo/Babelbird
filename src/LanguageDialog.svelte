@@ -1,10 +1,16 @@
 <script lang="ts">
     import { Dialog } from "@ark-ui/svelte/dialog";
+    import { Portal } from "@ark-ui/svelte/portal";
     import { XIcon } from "lucide-svelte";
     import { createListCollection, Select } from "@ark-ui/svelte/select";
     import { ChevronDownIcon } from "lucide-svelte";
     import { languages } from "./languages";
-    import type { SvelteComponent } from "svelte";
+
+    const {
+        portalRoot,
+    }: {
+        portalRoot: HTMLElement | undefined;
+    } = $props();
 
     let open = $state(false);
     let resolve = $state<
@@ -58,58 +64,65 @@
 
 <Dialog.Root
     bind:open
+    initialFocusEl={() => selectEl}
     onExitComplete={() => attemptReject("Dialog got closed")}
 >
-    <Dialog.Backdrop />
-    <Dialog.Positioner>
-        <Dialog.Content>
-            <Dialog.Title>Pick Target Language</Dialog.Title>
-            <Dialog.Description
-                >Please select the language into which you would like to
-                translate the selected text</Dialog.Description
-            >
+    <Portal container={portalRoot}>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+            <Dialog.Content>
+                <Dialog.Title>Pick Target Language</Dialog.Title>
+                <Dialog.Description
+                    >Please select the language into which you would like to
+                    translate the selected text</Dialog.Description
+                >
 
-            <form action="" onsubmit={nextStep}>
-                <Select.Root {collection} bind:value>
-                    <Select.Label>Language</Select.Label>
-                    <Select.Control>
-                        <Select.Trigger bind:ref={selectEl}>
-                            <Select.ValueText placeholder="Pick a language" />
-                            <Select.Indicator>
-                                <ChevronDownIcon />
-                            </Select.Indicator>
-                        </Select.Trigger>
-                    </Select.Control>
-                    <Select.Positioner>
-                        <Select.Content>
-                            <Select.ItemGroup>
-                                <Select.ItemGroupLabel
-                                    >Languages</Select.ItemGroupLabel
-                                >
-                                {#each collection.items as item (item.value)}
-                                    <Select.Item {item}>
-                                        <Select.ItemText
-                                            >{item.label}</Select.ItemText
+                <form action="" onsubmit={nextStep}>
+                    <Select.Root {collection} bind:value>
+                        <Select.Label>Language</Select.Label>
+                        <Select.Control>
+                            <Select.Trigger bind:ref={selectEl}>
+                                <Select.ValueText
+                                    placeholder="Pick a language"
+                                />
+                                <Select.Indicator>
+                                    <ChevronDownIcon />
+                                </Select.Indicator>
+                            </Select.Trigger>
+                        </Select.Control>
+                        <Portal container={portalRoot}>
+                            <Select.Positioner>
+                                <Select.Content>
+                                    <Select.ItemGroup>
+                                        <Select.ItemGroupLabel
+                                            >Languages</Select.ItemGroupLabel
                                         >
-                                        <Select.ItemIndicator
-                                            >✓</Select.ItemIndicator
-                                        >
-                                    </Select.Item>
-                                {/each}
-                            </Select.ItemGroup>
-                        </Select.Content>
-                    </Select.Positioner>
-                    <Select.HiddenSelect />
-                </Select.Root>
+                                        {#each collection.items as item (item.value)}
+                                            <Select.Item {item}>
+                                                <Select.ItemText
+                                                    >{item.label}</Select.ItemText
+                                                >
+                                                <Select.ItemIndicator
+                                                    >✓</Select.ItemIndicator
+                                                >
+                                            </Select.Item>
+                                        {/each}
+                                    </Select.ItemGroup>
+                                </Select.Content>
+                            </Select.Positioner>
+                        </Portal>
+                        <Select.HiddenSelect />
+                    </Select.Root>
 
-                <div>
-                    <button type="submit">Translate</button>
-                </div>
-            </form>
+                    <div>
+                        <button type="submit">Translate</button>
+                    </div>
+                </form>
 
-            <Dialog.CloseTrigger>
-                <XIcon />
-            </Dialog.CloseTrigger>
-        </Dialog.Content>
-    </Dialog.Positioner>
+                <Dialog.CloseTrigger>
+                    <XIcon />
+                </Dialog.CloseTrigger>
+            </Dialog.Content>
+        </Dialog.Positioner>
+    </Portal>
 </Dialog.Root>
