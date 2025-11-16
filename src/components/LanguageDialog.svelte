@@ -3,7 +3,7 @@
     import { Select } from "bits-ui";
     import { XIcon } from "lucide-svelte";
     import { ChevronDownIcon } from "lucide-svelte";
-    import { languages } from "./languages";
+    import { languages } from "../utils/languages";
 
     const {
         portalRoot,

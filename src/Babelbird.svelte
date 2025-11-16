@@ -1,12 +1,7 @@
 <script module lang="ts">
-    interface TextToTranslate {
-        /**
-         * Indicates if the text to translate is currently covered by a focused
-         * selection range (meaning that if you type the keyboard it will
-         * delete said selection)
-         */
-        isSelected: boolean;
+    import { sleep } from "./utils/async";
 
+    interface TextToTranslateBase {
         /**
          * The actual text to be translated, stripped of potential HTML inside
          * of it.
@@ -17,12 +12,34 @@
          * The element on which we should send the keyboard events
          */
         element: Element;
+    }
+
+    /**
+     * WHen the text is not selected, there is no range associated
+     */
+    interface TextToTranslateNotSelected extends TextToTranslateBase {
+        /**
+         * Indicates if the text to translate is currently covered by a focused
+         * selection range (meaning that if you type the keyboard it will
+         * delete said selection)
+         */
+        isSelected: false;
+    }
+
+    /**
+     * If the text is selected (or has to be selected) then there is a range
+     * guaranteed
+     */
+    interface TextToTranslateSelected extends TextToTranslateBase {
+        isSelected: true;
 
         /**
          * The range to select when applying the selection
          */
-        rangeToSelect?: Range;
+        rangeToSelect: Range;
     }
+
+    type TextToTranslate = TextToTranslateNotSelected | TextToTranslateSelected;
 
     /**
      * Detects the current selection, caret position, etc of the user to guess
@@ -42,23 +59,16 @@
                 element: active!,
             };
         } else if (contentEditable) {
-            const selectionIsRange = selection?.type === "Range";
-
-            if (!selectionIsRange) {
-                const range = selectTextToTranslate(selection, active!);
-
-                return {
-                    isSelected: true,
-                    text: range.toString() ?? "",
-                    element: active!,
-                    rangeToSelect: range,
-                };
-            }
+            const rangeToSelect =
+                selection?.type !== "Range"
+                    ? selectTextToTranslate(selection, active!)
+                    : selection.getRangeAt(0);
 
             return {
                 isSelected: true,
-                text: selection?.toString() ?? "",
+                text: rangeToSelect.toString(),
                 element: active!,
+                rangeToSelect,
             };
         }
     }
@@ -66,22 +76,27 @@
     /**
      * Applies the selection to the element based on the TextToTranslate info
      */
-    function applySelection(ttt: TextToTranslate) {
-        // Focus the element
+    async function applySelection(ttt: TextToTranslate) {
+        console.log("Applying selection");
+
         if (ttt.element instanceof HTMLElement) {
             ttt.element.focus();
         }
 
-        if (!ttt.isSelected) {
-            // For input/textarea, select all
-            document.execCommand("selectAll", false, "");
-        } else if (ttt.rangeToSelect) {
-            // For contentEditable with a computed range
+        if (ttt.isSelected) {
             const selection = window.getSelection();
-            selection?.removeAllRanges();
-            selection?.addRange(ttt.rangeToSelect);
+
+            if (!selection) {
+                throw new Error("Could not get our hands on selection");
+            }
+
+            selection.removeAllRanges();
+            selection.addRange(ttt.rangeToSelect);
+
+            await sleep(0.1);
+        } else {
+            document.execCommand("selectAll", false, "");
         }
-        // If isSelected is true but no rangeToSelect, the selection was already there
     }
 
     /**
@@ -142,6 +157,7 @@
             return active;
         })();
 
+        console.log("Node to select: ", nodeToSelect);
         range.selectNodeContents(nodeToSelect);
 
         return range;
@@ -154,8 +170,8 @@
         TranslatorInstance,
     } from "../chrome-ai";
     import LoadingIndicator from "./components/LoadingIndicator.svelte";
-    import { makeChromeStorage } from "./storage.svelte";
-    import LanguageDialog from "./LanguageDialog.svelte";
+    import { makeChromeStorage } from "./utils/storage.svelte.js";
+    import LanguageDialog from "./components/LanguageDialog.svelte";
 
     const {
         targetLanguage,
@@ -265,6 +281,13 @@
             while (true) {
                 const { done, value } = await reader.read();
 
+                if (done) {
+                    if (import.meta.env.MODE === "development") {
+                        console.log(`[babelbird] Translation done!`);
+                    }
+                    break;
+                }
+
                 // The issue with the current API is that it has a stupid
                 // artificial random delay of 2~3s in order to prevent from
                 // fingerprinting the model but as a result there is no
@@ -272,14 +295,14 @@
                 // instead we wait for the first byte to pop up.
                 if (!translatorFirstByte) {
                     translatorFirstByte = 1;
-                    applySelection(ttt);
-                }
-
-                if (done) {
-                    break;
+                    await applySelection(ttt);
                 }
 
                 document.execCommand("insertText", false, value);
+
+                if (import.meta.env.MODE === "development") {
+                    console.log(`[babelbird] Inserted: ${value}`);
+                }
             }
         } finally {
             translatorFirstByte = 1;

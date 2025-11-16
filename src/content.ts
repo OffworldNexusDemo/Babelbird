@@ -1,6 +1,6 @@
 import { mount } from "svelte";
 import Babelbird from "./Babelbird.svelte";
-import { makeChromeStorage } from "./storage.svelte";
+import { makeChromeStorage } from "./utils/storage.svelte.js";
 
 let app: ReturnType<typeof Babelbird> | undefined;
 
