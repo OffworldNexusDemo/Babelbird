@@ -32,6 +32,12 @@ async function loadTranslator() {
 
     const container = document.createElement("div");
     container.id = "_babelbird";
+    Object.assign(container.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        zIndex: "2147483647",
+    });
     document.body.appendChild(container);
 
     const target = document.createElement("div");

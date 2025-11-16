@@ -372,4 +372,8 @@
             }
         }
     }
+
+    .portal-root {
+        position: absolute;
+    }
 </style>
