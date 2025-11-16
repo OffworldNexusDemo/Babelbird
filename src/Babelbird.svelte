@@ -172,6 +172,7 @@
     import LoadingIndicator from "./components/LoadingIndicator.svelte";
     import { makeChromeStorage } from "./utils/storage.svelte.js";
     import LanguageDialog from "./components/LanguageDialog.svelte";
+    import {insertTextLetterByLetter} from "./utils/browser";
 
     const {
         targetLanguage,
@@ -298,7 +299,7 @@
                     await applySelection(ttt);
                 }
 
-                document.execCommand("insertText", false, value);
+                await insertTextLetterByLetter(value);
 
                 if (import.meta.env.MODE === "development") {
                     console.log(`[babelbird] Inserted: ${value}`);
