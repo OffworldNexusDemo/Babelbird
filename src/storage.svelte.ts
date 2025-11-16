@@ -14,17 +14,18 @@ const storage = globalThis.chrome?.storage;
  */
 export async function makeChromeStorage<T = any>(
     key: string,
-    defaultValue: T | undefined,
+    defaultValue: T,
     storageArea: StorageAreaName = "sync",
-) {
+): Promise<ChromeStorage<T>> {
     if (!storage) {
         throw new Error("Storage API not available");
     }
 
     const { [key]: storedValue } = await storage[storageArea].get([key]);
-    const initialValue = storedValue === undefined ? defaultValue : storedValue;
+    const initialValue =
+        storedValue === undefined ? defaultValue : (storedValue as T);
 
-    return new ChromeStorage(key, initialValue, storageArea);
+    return new ChromeStorage<T>(key, initialValue, storageArea);
 }
 
 /**
@@ -33,7 +34,7 @@ export async function makeChromeStorage<T = any>(
 class ChromeStorage<T = any> {
     #key: string;
     #storageArea: chrome.storage.StorageArea;
-    #state = $state<{ current: T | undefined }>({ current: undefined });
+    #state = $state<{ current?: T }>({});
 
     constructor(key: string, initialValue: T, storageArea: StorageAreaName) {
         this.#key = key;
@@ -52,11 +53,11 @@ class ChromeStorage<T = any> {
         );
     }
 
-    get current(): T | undefined {
-        return this.#state.current;
+    get current(): T {
+        return this.#state.current!;
     }
 
-    set current(value: T | undefined) {
+    set current(value: T) {
         this.#state.current = value;
         this.#storageArea.set({ [this.#key]: value }).then();
     }

@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { Dialog } from "@ark-ui/svelte/dialog";
-    import { Portal } from "@ark-ui/svelte/portal";
+    import { Dialog } from "bits-ui";
+    import { Select } from "bits-ui";
     import { XIcon } from "lucide-svelte";
-    import { createListCollection, Select } from "@ark-ui/svelte/select";
     import { ChevronDownIcon } from "lucide-svelte";
     import { languages } from "./languages";
 
@@ -21,7 +20,7 @@
     export function askForLanguage(defaultLang: string) {
         attemptReject("askForLanguage() got called again");
         open = true;
-        value = [defaultLang];
+        value = defaultLang;
 
         return new Promise<string>((res, rej) => {
             resolve = res;
@@ -40,7 +39,7 @@
         open = false;
 
         if (resolve) {
-            resolve(value[0]);
+            resolve(value);
         }
     }
 
@@ -49,83 +48,83 @@
         value: string;
     }
 
-    const collection = createListCollection<Item>({
-        items: [...languages]
-            .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
-            .map(([code, lang]) => ({
-                label: `${code} - ${lang}`,
-                value: code,
-            })),
-    });
+    const items: Item[] = [...languages]
+        .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
+        .map(([code, lang]) => ({
+            label: `${code} - ${lang}`,
+            value: code,
+        }));
 
-    let value = $state<string[]>([]);
+    let value = $state<string>("");
     let selectEl = $state<HTMLElement | null>(null);
 </script>
 
 <Dialog.Root
     bind:open
-    initialFocusEl={() => selectEl}
-    onExitComplete={() => attemptReject("Dialog got closed")}
+    onOpenChange={(isOpen) => {
+        if (!isOpen) {
+            attemptReject("Dialog got closed");
+        }
+    }}
 >
-    <Portal container={portalRoot}>
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-            <Dialog.Content>
-                <Dialog.Title>Pick Target Language</Dialog.Title>
-                <Dialog.Description
-                    >Please select the language into which you would like to
-                    translate the selected text</Dialog.Description
-                >
+    <Dialog.Portal to={portalRoot}>
+        <Dialog.Overlay />
+        <Dialog.Content
+            onOpenAutoFocus={(e: Event) => {
+                e.preventDefault();
+                selectEl?.focus();
+            }}
+        >
+            <Dialog.Title>Pick Target Language</Dialog.Title>
+            <Dialog.Description
+                >Please select the language into which you would like to
+                translate the selected text</Dialog.Description
+            >
 
-                <form action="" onsubmit={nextStep} class="language-form">
-                    <Select.Root {collection} bind:value>
-                        <Select.Label>Language</Select.Label>
-                        <Select.Control>
-                            <Select.Trigger bind:ref={selectEl}>
-                                <Select.ValueText
-                                    placeholder="Pick a language"
-                                />
-                                <Select.Indicator>
-                                    <ChevronDownIcon />
-                                </Select.Indicator>
-                            </Select.Trigger>
-                        </Select.Control>
-                        <Portal container={portalRoot}>
-                            <Select.Positioner>
-                                <Select.Content>
-                                    <Select.ItemGroup>
-                                        <Select.ItemGroupLabel
-                                            >Languages</Select.ItemGroupLabel
+            <form action="" onsubmit={nextStep} class="language-form">
+                <label for="language-select">Language</label>
+                <Select.Root type="single" bind:value {items} name="language">
+                    <Select.Trigger bind:ref={selectEl} id="language-select">
+                        {#if value}
+                            {items.find((i) => i.value === value)?.label ||
+                                value}
+                        {:else}
+                            Pick a language
+                        {/if}
+                        <ChevronDownIcon />
+                    </Select.Trigger>
+                    <Select.Portal to={portalRoot}>
+                        <Select.Content>
+                            {#each items as item (item.value)}
+                                <Select.Item
+                                    value={item.value}
+                                    label={item.label}
+                                >
+                                    {#snippet children({ selected })}
+                                        <span class="item-label"
+                                            >{item.label}</span
                                         >
-                                        {#each collection.items as item (item.value)}
-                                            <Select.Item {item}>
-                                                <Select.ItemText
-                                                    >{item.label}</Select.ItemText
-                                                >
-                                                <Select.ItemIndicator
-                                                    >✓</Select.ItemIndicator
-                                                >
-                                            </Select.Item>
-                                        {/each}
-                                    </Select.ItemGroup>
-                                </Select.Content>
-                            </Select.Positioner>
-                        </Portal>
-                        <Select.HiddenSelect />
-                    </Select.Root>
+                                        {#if selected}
+                                            <span class="item-indicator">✓</span
+                                            >
+                                        {/if}
+                                    {/snippet}
+                                </Select.Item>
+                            {/each}
+                        </Select.Content>
+                    </Select.Portal>
+                </Select.Root>
 
-                    <button type="submit" class="submit-button"
-                        >Translate</button
-                    >
-                </form>
+                <button type="submit" class="submit-button">Translate</button>
+            </form>
 
-                <Dialog.CloseTrigger>
-                    <XIcon />
-                </Dialog.CloseTrigger>
-            </Dialog.Content>
-        </Dialog.Positioner>
-    </Portal>
+            <Dialog.Close>
+                <XIcon />
+            </Dialog.Close>
+        </Dialog.Content>
+    </Dialog.Portal>
 </Dialog.Root>
+
 <style>
     .language-form {
         display: flex;
@@ -133,8 +132,21 @@
         gap: var(--space-xl);
     }
 
-    .language-form :global([data-scope="select"][data-part="label"]) {
+    .language-form label {
+        font-family: var(--font-sans);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
         margin-bottom: var(--space-md);
+        display: block;
+    }
+
+    .item-label {
+        flex: 1;
+    }
+
+    .item-indicator {
+        margin-left: var(--space-sm);
     }
 
     .submit-button {
@@ -169,4 +181,3 @@
         outline-offset: 2px;
     }
 </style>
-

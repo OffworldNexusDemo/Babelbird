@@ -156,14 +156,11 @@
     import LoadingIndicator from "./components/LoadingIndicator.svelte";
     import { makeChromeStorage } from "./storage.svelte";
     import LanguageDialog from "./LanguageDialog.svelte";
-    import { EnvironmentProvider } from "@ark-ui/svelte/environment";
 
     const {
         targetLanguage,
-        shadowRoot,
     }: {
         targetLanguage: Awaited<ReturnType<typeof makeChromeStorage<string>>>;
-        shadowRoot: ShadowRoot;
     } = $props();
 
     let portalRoot = $state<HTMLElement | undefined>(undefined);
@@ -314,16 +311,14 @@
     }
 </script>
 
-<EnvironmentProvider value={shadowRoot}>
-    <LoadingIndicator progress={loadProgress} />
-    <LanguageDialog bind:this={languageDialog} {portalRoot} />
-</EnvironmentProvider>
+<LoadingIndicator progress={loadProgress} />
+<LanguageDialog bind:this={languageDialog} {portalRoot} />
 
 <div class="portal-root" bind:this={portalRoot}></div>
 
 <style lang="scss">
-    @forward "./styles/ark/dialog.scss";
-    @forward "./styles/ark/select.scss";
+    @forward "./styles/dialog.scss";
+    @forward "./styles/select.scss";
 
     :global {
         :host {

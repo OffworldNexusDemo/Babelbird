@@ -48,7 +48,6 @@ async function loadTranslator() {
         target: target,
         props: {
             targetLanguage,
-            shadowRoot,
         },
     });
 }
