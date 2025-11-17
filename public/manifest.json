@@ -5,9 +5,10 @@
     "description": "Translate your current input by pressing Alt+T",
     "permissions": ["storage"],
     "icons": {
-        "16": "vite.svg",
-        "48": "vite.svg",
-        "128": "vite.svg"
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
     },
     "background": {
         "service_worker": "babelbird-bg.js"
